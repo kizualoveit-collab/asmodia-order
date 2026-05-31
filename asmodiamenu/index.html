@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Maison Asmodia - Order Transmitter</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        asmodia: {
+                            bg: '#080206',
+                            bgGradTo: '#16040f',
+                            card: '#180613',
+                            input: '#22091B',
+                            rose: '#E03E75', // ネオンローズピンク
+                            roseLight: '#FFA3C2',
+                            roseDark: '#9E1C4B',
+                            gold: '#C5A880',  // アンティークゴールド
+                            goldLight: '#EAD7BA'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts (Cinzel & Noto Sans JP) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: #080206;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .serif-title {
+            font-family: 'Cinzel', serif;
+        }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen flex flex-col pb-10">
+
+    <!-- Header -->
+    <header class="bg-asmodia-card border-b border-asmodia-rose/20 py-3 px-6 sticky top-0 z-50 shadow-md">
+        <div class="max-w-md mx-auto flex justify-center items-center h-12">
+            <!-- Maison Asmodia 公式ロゴ画像をメインヘッダーに配置 -->
+            <img src="logo.png" alt="Maison Asmodia" class="h-full object-contain" onerror="this.style.display='none'; document.getElementById('fallback-title').style.display='block';">
+            <h1 id="fallback-title" class="serif-title text-base font-bold tracking-widest text-asmodia-gold hidden">
+                MAISON ASMODIA
+            </h1>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 w-full max-w-md mx-auto px-4 py-6 space-y-5">
+
+        <!-- Step 1: Table Cast Selection -->
+        <div class="bg-asmodia-card border border-asmodia-rose/15 rounded-2xl p-4.5 space-y-3 shadow-lg">
+            <h3 class="text-xs font-bold text-asmodia-gold flex items-center tracking-wider">
+                <span class="w-1.5 h-3 bg-asmodia-rose rounded-full mr-2"></span>1. 卓担当キャストを選択
+            </h3>
+            
+            <!-- Cast Button Grid -->
+            <div class="grid grid-cols-3 gap-2" id="table-cast-grid">
+                <!-- Dynamic injection of Cast 11 buttons -->
+            </div>
+            <input type="hidden" id="selected-table-cast" value="">
+        </div>
+
+        <!-- Step 2: Purchaser Name (Optional) -->
+        <div class="bg-asmodia-card border border-asmodia-rose/15 rounded-2xl p-4.5 space-y-3 shadow-lg">
+            <h3 class="text-xs font-bold text-asmodia-gold flex items-center tracking-wider">
+                <span class="w-1.5 h-3 bg-asmodia-rose rounded-full mr-2"></span>2. 購入者名（任意）
+            </h3>
+            <input
+                type="text"
+                id="purchaser-name"
+                placeholder="誰からの購入か入力（未入力でもOK）"
+                class="w-full py-3 px-3 rounded-lg bg-asmodia-input border border-asmodia-rose/10 text-xs font-bold text-slate-200 outline-none placeholder:text-slate-500"
+            >
+        </div>
+
+        <!-- Step 3: Drink Order Rows -->
+        <div class="space-y-3">
+            <h3 class="text-xs font-bold text-asmodia-gold flex items-center tracking-wider px-1">
+                <span class="w-1.5 h-3 bg-asmodia-rose rounded-full mr-2"></span>3. ドリンク・宛先・数量
+            </h3>
+
+            <!-- Dynamically generated Drink Rows Container -->
+            <div id="drink-rows-container" class="space-y-3">
+                <!-- Dynamic Rows -->
+            </div>
+
+            <!-- Add Row Button -->
+            <button type="button" onclick="addDrinkRow()" class="w-full py-3.5 rounded-xl bg-asmodia-card hover:bg-asmodia-input/50 border border-dashed border-asmodia-rose/30 hover:border-asmodia-rose transition-all text-xs font-bold text-asmodia-roseLight flex items-center justify-center space-x-2 tracking-wider">
+                <i class="fa-solid fa-plus"></i>
+                <span>ドリンクを追加する</span>
+            </button>
+        </div>
+
+        <!-- Submission Area -->
+        <div class="pt-2">
+            <button type="button" onclick="submitOrder()" id="submit-btn" class="w-full py-4 rounded-xl bg-gradient-to-r from-asmodia-roseDark via-asmodia-rose to-asmodia-roseLight hover:brightness-110 active:scale-[0.98] transition-all text-white font-bold tracking-wider flex items-center justify-center space-x-2 text-sm shadow-md">
+                <i class="fa-solid fa-paper-plane text-xs"></i>
+                <span>オーダーを送信する</span>
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Global Toast / Modal Indicator -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-asmodia-card border border-asmodia-rose text-asmodia-roseLight px-6 py-3.5 rounded-full text-xs font-bold flex items-center space-x-2 transition-all duration-300 scale-0 opacity-0 z-50 shadow-xl">
+        <i class="fa-solid fa-circle-notch animate-spin text-xs" id="toast-icon"></i>
+        <span id="toast-text">送信中...</span>
+    </div>
+
+    <!-- Success Feedback Modal -->
+    <div id="success-modal" class="fixed inset-0 bg-asmodia-bg/95 z-[100] flex items-center justify-center p-6 transition-all duration-300 pointer-events-none opacity-0 scale-95">
+        <div class="bg-asmodia-card border border-asmodia-rose/40 rounded-2xl p-5 w-full max-w-sm text-center space-y-4 shadow-xl">
+            <div class="w-12 h-12 bg-gradient-to-tr from-asmodia-roseDark to-asmodia-rose rounded-full flex items-center justify-center mx-auto shadow-md">
+                <i class="fa-solid fa-check text-white text-lg"></i>
+            </div>
+            <h4 class="text-sm font-bold text-asmodia-gold tracking-wider">送信完了</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                注文データがスプレッドシートに記録されました。
+            </p>
+            <button onclick="closeSuccessModal()" class="w-full py-3 bg-gradient-to-r from-asmodia-roseDark to-asmodia-rose text-white rounded-xl font-bold text-xs tracking-wider transition-all">
+                次のオーダーへ
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- CONSTANTS & CONFIGURATION ---
+        // ⚠️ここに取得した「デプロイ後のWebアプリURL」を貼り付けてください！
+        // 例: const WEB_APP_URL = "https://script.google.com/macros/s/xxxx/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwVBpPrA_O1By_8USdUP_vqct_2-j309iEwKn9g5MNF8nHEfWRgI3-hgCJAqasuJsmI6g/exec"; 
+
+        // キャストリスト
+        const CAST_LIST = [
+            "くら", "らしぇる", "ゆに", "イルベル", "ミィ", 
+            "ゾエ", "クゥルン", "ゆち", "ルルティア", "りこ", "アイラン", "お店"
+        ];
+
+        // ドリンクマスタ
+        const DRINK_MENU = [
+            { name: "デモンズティア", price: 500000 },
+            { name: "ルナディアーブル", price: 1000000 },
+            { name: "ローズノワール", price: 3000000 },
+            { name: "ミスティアビス", price: 5000000 },
+            { name: "ファントムティール", price: 10000000 },
+            { name: "セピアグレイス", price: 30000000 },
+            { name: "アスモヴェール", price: 50000000 },
+            { name: "バースデーメニュー", price: 1000000 }
+        ];
+
+        let drinkRowCount = 0;
+
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            renderTableCastButtons();
+            addDrinkRow(); // 初期注文行を1つ追加
+        });
+
+        // --- RENDER FUNCTIONS ---
+        function renderTableCastButtons() {
+            const grid = document.getElementById('table-cast-grid');
+            grid.innerHTML = CAST_LIST.map(cast => {
+                return `
+                    <button type="button" onclick="selectTableCast('${cast}', this)" class="cast-btn py-3 px-1 text-xs font-bold rounded-xl border border-asmodia-rose/10 bg-asmodia-bg text-slate-400 hover:text-slate-200 transition-all text-center truncate">
+                        ${cast}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectTableCast(castName, element) {
+            document.querySelectorAll('.cast-btn').forEach(btn => {
+                btn.className = "cast-btn py-3 px-1 text-xs font-bold rounded-xl border border-asmodia-rose/10 bg-asmodia-bg text-slate-400 hover:text-slate-200 transition-all text-center truncate";
+            });
+            element.className = "cast-btn py-3 px-1 text-xs font-bold rounded-xl border border-asmodia-rose bg-asmodia-rose/15 text-asmodia-roseLight transition-all text-center truncate";
+            document.getElementById('selected-table-cast').value = castName;
+        }
+
+        function addDrinkRow() {
+            drinkRowCount++;
+            const container = document.getElementById('drink-rows-container');
+            const rowId = `row-${drinkRowCount}`;
+
+            const rowHtml = `
+                <div id="${rowId}" class="drink-row bg-asmodia-card border border-asmodia-rose/15 rounded-2xl p-4 space-y-3.5 shadow-md relative">
+                    <!-- Row Delete Header -->
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center">
+                            項目 #${drinkRowCount}
+                        </span>
+                        ${drinkRowCount > 1 ? `
+                            <button type="button" onclick="removeDrinkRow('${rowId}')" class="text-slate-500 hover:text-asmodia-rose transition-colors text-xs flex items-center space-x-1">
+                                <i class="fa-solid fa-square-minus text-sm"></i>
+                                <span class="text-[10px] font-bold">削除</span>
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <!-- 1. Drink Picker -->
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-400">ドリンク名</label>
+                        <select onchange="updateRowPriceDisplay('${rowId}')" class="drink-select w-full py-3 px-3 rounded-lg bg-asmodia-input border border-asmodia-rose/10 text-xs font-bold text-slate-200 outline-none">
+                            <option value="" disabled selected>選択してください...</option>
+                            ${DRINK_MENU.map(drink => `<option value="${drink.name}">${drink.name} (¥${(drink.price).toLocaleString()})</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <!-- 2. Target Dest Select -->
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-400">宛先（キャスト）</label>
+                        <select class="dest-select w-full py-3 px-3 rounded-lg bg-asmodia-input border border-asmodia-rose/10 text-xs font-bold text-slate-200 outline-none">
+                            <option value="" disabled selected>選択してください...</option>
+                            ${CAST_LIST.map(cast => `<option value="${cast}">${cast}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <!-- 3. Quantity Counter -->
+                    <div class="flex justify-between items-center pt-2 border-t border-asmodia-rose/5">
+                        <div class="space-y-0.5">
+                            <span class="text-[9px] font-bold text-slate-400 block">小計</span>
+                            <span class="text-xs font-bold text-asmodia-rose" id="${rowId}-price-display">¥0</span>
+                        </div>
+                        <div class="flex items-center space-x-2 bg-asmodia-input border border-asmodia-rose/15 p-1 rounded-xl">
+                            <button type="button" onclick="adjustQty('${rowId}', -1)" class="w-8 h-8 rounded-lg bg-asmodia-bg hover:bg-asmodia-input flex items-center justify-center text-slate-400">
+                                <i class="fa-solid fa-minus text-[10px]"></i>
+                            </button>
+                            <input type="number" id="${rowId}-qty" value="1" min="1" max="99" class="qty-input w-8 text-center bg-transparent border-none text-slate-100 font-bold text-xs outline-none focus:ring-0">
+                            <button type="button" onclick="adjustQty('${rowId}', 1)" class="w-8 h-8 rounded-lg bg-asmodia-bg hover:bg-asmodia-input flex items-center justify-center text-slate-400">
+                                <i class="fa-solid fa-plus text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', rowHtml);
+        }
+
+        function removeDrinkRow(rowId) {
+            const row = document.getElementById(rowId);
+            if (row) {
+                row.remove();
+            }
+        }
+
+        function adjustQty(rowId, amount) {
+            const qtyInput = document.getElementById(`${rowId}-qty`);
+            let current = parseInt(qtyInput.value) || 1;
+            current += amount;
+            if (current < 1) current = 1;
+            qtyInput.value = current;
+            updateRowPriceDisplay(rowId);
+        }
+
+        function updateRowPriceDisplay(rowId) {
+            const row = document.getElementById(rowId);
+            const drinkName = row.querySelector('.drink-select').value;
+            const qty = parseInt(document.getElementById(`${rowId}-qty`).value) || 1;
+            const priceDisp = document.getElementById(`${rowId}-price-display`);
+            
+            const drink = DRINK_MENU.find(d => d.name === drinkName);
+            if (drink) {
+                priceDisp.innerText = `¥${(drink.price * qty).toLocaleString()}`;
+            } else {
+                priceDisp.innerText = `¥0`;
+            }
+        }
+
+        // --- TOAST CONTROL ---
+        function showToast(message, isSpinning = true) {
+            const toast = document.getElementById('toast');
+            const text = document.getElementById('toast-text');
+            const icon = document.getElementById('toast-icon');
+
+            text.innerText = message;
+            if (isSpinning) {
+                icon.className = "fa-solid fa-circle-notch animate-spin text-xs";
+            } else {
+                icon.className = "fa-solid fa-circle-exclamation text-asmodia-rose text-xs";
+            }
+
+            toast.classList.remove('scale-0', 'opacity-0');
+            toast.classList.add('scale-100', 'opacity-100');
+        }
+
+        function hideToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('scale-100', 'opacity-100');
+            toast.classList.add('scale-0', 'opacity-0');
+        }
+
+        function showSuccessModal() {
+            const modal = document.getElementById('success-modal');
+            modal.classList.remove('pointer-events-none', 'opacity-0', 'scale-95');
+            modal.classList.add('scale-100', 'opacity-100');
+        }
+
+        function closeSuccessModal() {
+            const modal = document.getElementById('success-modal');
+            modal.classList.add('pointer-events-none', 'opacity-0', 'scale-95');
+            modal.classList.remove('scale-100', 'opacity-100');
+        }
+
+        // --- SUBMIT ORDER ACTION ---
+        function submitOrder() {
+            const tableCast = document.getElementById('selected-table-cast').value;
+            const purchaserName = document.getElementById('purchaser-name').value.trim();
+
+            if (!tableCast) {
+                showToast("1. 卓担当キャストを選択してください", false);
+                setTimeout(hideToast, 2500);
+                return;
+            }
+
+            const rows = document.querySelectorAll('.drink-row');
+            const orders = [];
+            let isValid = true;
+
+            rows.forEach(row => {
+                const drinkName = row.querySelector('.drink-select').value;
+                const dest = row.querySelector('.dest-select').value;
+                const qtyVal = row.querySelector('.qty-input').value;
+                const qty = parseInt(qtyVal) || 0;
+
+                if (!drinkName || !dest || qty <= 0) {
+                    isValid = false;
+                    return;
+                }
+
+                const drinkMeta = DRINK_MENU.find(d => d.name === drinkName);
+
+                orders.push({
+                    tableCast: tableCast,
+  dest: dest,
+  drinkName: drinkName,
+  qty: qty,
+  price: drinkMeta.price,
+  total: drinkMeta.price * qty,
+  purchaserName: document.getElementById("purchaser-name").value
+                    
+                });
+            });
+
+            if (!isValid || orders.length === 0) {
+                showToast("3. ドリンク・宛先を正しく入力してください", false);
+                setTimeout(hideToast, 2500);
+                return;
+            }
+
+            // 送信ボタンの無効化
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            showToast("サーバーへ送信中...");
+
+            if (!WEB_APP_URL) {
+                setTimeout(() => {
+                    hideToast();
+                    showSuccessModal();
+                    submitBtn.disabled = false;
+                    resetOrderForm();
+                }, 1200);
+                return;
+            }
+
+            // GAS API 呼び出し
+            fetch(WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors", 
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    action: "addOrders",
+                    purchaserName: purchaserName,
+                    orders: orders
+                })
+            })
+            .then(() => {
+                hideToast();
+                showSuccessModal();
+                submitBtn.disabled = false;
+                resetOrderForm();
+            })
+            .catch(err => {
+                console.error("Transmission Error: ", err);
+                showToast("送信に失敗しました。", false);
+                submitBtn.disabled = false;
+                setTimeout(hideToast, 4000);
+            });
+        }
+
+        function resetOrderForm() {
+            // キャスト選択のリセット
+            document.getElementById('selected-table-cast').value = "";
+            document.querySelectorAll('.cast-btn').forEach(btn => {
+                btn.className = "cast-btn py-3 px-1 text-xs font-bold rounded-xl border border-asmodia-rose/10 bg-asmodia-bg text-slate-400 hover:text-slate-200 transition-all text-center truncate";
+            });
+
+            // 購入者名のリセット
+            document.getElementById('purchaser-name').value = "";
+
+            // ドリンク行のリセット
+            drinkRowCount = 0;
+            document.getElementById('drink-rows-container').innerHTML = "";
+            addDrinkRow();
+        }
+    </script>
+</body>
+</html>
